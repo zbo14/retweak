@@ -42,7 +42,7 @@ The CLI adopts some options from [curl](https://curl.haxx.se/) that take a liter
 The following sends 3 requests with different values for the query parameter, "id".
 
 ```
-$ retweak -l "1,2,3" -t url https://<domain>/a/b/c?id=*
+$ retweak -l "1,2,3" -t url "https://<domain>/a/b/c?id=*"
 ```
 
 ### HTTP method
