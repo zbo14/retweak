@@ -1,0 +1,3 @@
+X-Foobar: baz
+Content-Type: application/json
+Cookie: u=1;v=*;z=3

@@ -1,0 +1,49 @@
+{
+  "name": "retweak",
+  "version": "1.0.0",
+  "description": "A CLI that tweaks and resends HTTP/S requests",
+  "bin": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zbo14/retweak"
+  },
+  "scripts": {
+    "test": "nyc mocha --recursive --exit"
+  },
+  "keywords": [
+    "bug-bounty",
+    "cli",
+    "http",
+    "https",
+    "pentesting"
+  ],
+  "author": "Zachary Balder",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "4.1.1"
+  },
+  "devDependencies": {
+    "eslint": "6.8.0",
+    "eslint-config-standard": "14.1.0",
+    "eslint-plugin-import": "2.20.1",
+    "eslint-plugin-node": "11.0.0",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-standard": "4.0.1",
+    "mocha": "7.1.1",
+    "nyc": "15.0.0",
+    "rewire": "5.0.0",
+    "sinon": "9.0.0"
+  },
+  "nyc": {
+    "check-coverage": true,
+    "per-file": true,
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100,
+    "reporter": [
+      "html",
+      "text"
+    ]
+  }
+}
