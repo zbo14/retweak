@@ -51,7 +51,7 @@ module.exports = async (url, opts) => {
     }
 
     const replacer = util.replacer(url.href, idx)
-    tweak = value => ({ url: replacer(value), method, headers, data })
+    tweak = value => ({ url: new URL(replacer(value)), method, headers, data })
   } else if (tweak === 'method') {
     list = list.map(value => value.toUpperCase())
 
