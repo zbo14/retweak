@@ -75,21 +75,21 @@ describe('lib/src/retweak', () => {
     sinon.assert.calledThrice(request)
 
     sinon.assert.calledWithExactly(request.getCall(0), {
-      url: 'https://foobar.com/?id=1',
+      url: new URL('https://foobar.com/?id=1'),
       method: 'GET',
       headers,
       data: undefined
     })
 
     sinon.assert.calledWithExactly(request.getCall(1), {
-      url: 'https://foobar.com/?id=2',
+      url: new URL('https://foobar.com/?id=2'),
       method: 'GET',
       headers,
       data: undefined
     })
 
     sinon.assert.calledWithExactly(request.getCall(2), {
-      url: 'https://foobar.com/?id=3',
+      url: new URL('https://foobar.com/?id=3'),
       method: 'GET',
       headers,
       data: undefined
