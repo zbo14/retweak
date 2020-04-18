@@ -4,7 +4,9 @@ const http = require('http')
 const https = require('https')
 
 module.exports = ({ url, ...opts }) => new Promise((resolve, reject) => {
-  const { request } = url.protocol === 'https:' ? https : http
+  const isHTTPS = url.protocol === 'https:'
+  const { request } = isHTTPS ? https : http
+  const rejectUnauthorized = !!(isHTTPS && opts.insecure)
 
   Object.entries(opts.headers || {}).forEach(([name, value]) => {
     delete opts.headers[name]
@@ -15,7 +17,7 @@ module.exports = ({ url, ...opts }) => new Promise((resolve, reject) => {
     opts.headers[name] = value
   })
 
-  request(url, opts, resp => {
+  request(url, { ...opts, rejectUnauthorized }, resp => {
     const { headers, statusCode } = resp
 
     let data = ''
