@@ -41,7 +41,7 @@ describe('src/request', () => {
     })
 
     sinon.assert.calledOnce(http.request)
-    sinon.assert.calledWith(http.request, url, {})
+    sinon.assert.calledWith(http.request, url, { rejectUnauthorized: false })
 
     sinon.assert.calledOnce(req.end)
     sinon.assert.calledWithExactly(req.end, '')
@@ -78,7 +78,7 @@ describe('src/request', () => {
     })
 
     sinon.assert.calledOnce(https.request)
-    sinon.assert.calledWith(https.request, url, {})
+    sinon.assert.calledWith(https.request, url, { rejectUnauthorized: false })
 
     sinon.assert.calledOnce(req.end)
     sinon.assert.calledWithExactly(req.end, '')
@@ -127,7 +127,8 @@ describe('src/request', () => {
     sinon.assert.calledWith(https.request, url, {
       data: 'foobar',
       headers: { 'x-foobar': 'baz' },
-      method: 'POST'
+      method: 'POST',
+      rejectUnauthorized: false
     })
 
     sinon.assert.calledOnce(req.end)
@@ -162,7 +163,11 @@ describe('src/request', () => {
     })
 
     sinon.assert.calledOnce(https.request)
-    sinon.assert.calledWith(https.request, url, { method: 'HEAD' })
+
+    sinon.assert.calledWith(https.request, url, {
+      method: 'HEAD',
+      rejectUnauthorized: false
+    })
 
     sinon.assert.calledOnce(req.end)
     sinon.assert.calledWithExactly(req.end, '')
