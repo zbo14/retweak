@@ -108,12 +108,12 @@ module.exports = async (url, opts) => {
 
   for (const value of list) {
     const opts = tweak(value)
-    util.log(`[+] REQUEST "${value}"`)
+    const arr = [`[+] REQUEST "${value}"`]
 
     const promise = request(opts).then(resp => {
       if (!respCodes.has(resp.statusCode)) {
         respCodes.add(resp.statusCode)
-        util.log(`[-] CODE ${resp.statusCode}`)
+        arr.push(`[-] CODE ${resp.statusCode}`)
       }
 
       Object.entries(resp.headers).forEach(([name, value]) => {
@@ -124,13 +124,15 @@ module.exports = async (url, opts) => {
         if (values) {
           if (!values.includes(value)) {
             respHeaders.set(name, values.concat(value))
-            util.log(`[-] HEADER "${name}: ${value}"`)
+            arr.push(`[-] HEADER "${name}: ${value}"`)
           }
         } else {
           respHeaders.set(name, [value])
-          util.log(`[-] HEADER "${name}: ${value}"`)
+          arr.push(`[-] HEADER "${name}: ${value}"`)
         }
       })
+
+      util.log(arr.join('\n'))
 
       if (stream) {
         const result = json

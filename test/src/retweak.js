@@ -277,16 +277,24 @@ describe('lib/src/retweak', () => {
       list: listPath
     })
 
-    sinon.assert.callCount(this.log, 8)
+    sinon.assert.calledThrice(this.log)
 
-    sinon.assert.calledWithExactly(this.log.getCall(0), '[+] REQUEST "bar"')
-    sinon.assert.calledWithExactly(this.log.getCall(1), '[-] CODE 200')
-    sinon.assert.calledWithExactly(this.log.getCall(2), '[-] HEADER "x-foo: bar"')
-    sinon.assert.calledWithExactly(this.log.getCall(3), '[+] REQUEST "baz"')
-    sinon.assert.calledWithExactly(this.log.getCall(4), '[-] CODE 403')
-    sinon.assert.calledWithExactly(this.log.getCall(5), '[-] HEADER "x-foo: baz"')
-    sinon.assert.calledWithExactly(this.log.getCall(6), '[+] REQUEST "bam"')
-    sinon.assert.calledWithExactly(this.log.getCall(7), '[-] HEADER "x-foo: bam"')
+    sinon.assert.calledWithExactly(this.log.getCall(0), [
+      '[+] REQUEST "bar"',
+      '[-] CODE 200',
+      '[-] HEADER "x-foo: bar"'
+    ].join('\n'))
+
+    sinon.assert.calledWithExactly(this.log.getCall(1), [
+      '[+] REQUEST "baz"',
+      '[-] CODE 403',
+      '[-] HEADER "x-foo: baz"'
+    ].join('\n'))
+
+    sinon.assert.calledWithExactly(this.log.getCall(2), [
+      '[+] REQUEST "bam"',
+      '[-] HEADER "x-foo: bam"'
+    ].join('\n'))
   })
 
   it('writes responses to file', async () => {

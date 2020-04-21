@@ -2,7 +2,7 @@
 
 A CLI that tweaks and resends HTTP/S requests!
 
-`retweak` can modify request URLs, methods, headers, or data.
+`retweak` can modify request URLs, methods, headers, or data and report changes in responses.
 
 ## Install
 
