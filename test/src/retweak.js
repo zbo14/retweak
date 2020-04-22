@@ -292,22 +292,22 @@ describe('lib/src/retweak', () => {
     sinon.assert.calledThrice(this.log)
 
     sinon.assert.calledWithExactly(this.log.getCall(0), [
-      '[+] REQUEST "bar"',
-      '[o] CODE 200',
-      '[o] HEADER "x-foo: bar"',
-      '[o] DATA {"foo": "bar"}'
+      'REQUEST "bar"',
+      '  CODE 200',
+      '  HEADER "x-foo: bar"',
+      '  DATA {"foo": "bar"}'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(1), [
-      '[+] REQUEST "baz"',
-      '[o] CODE 403',
-      '[o] HEADER "x-foo: baz"'
+      'REQUEST "baz"',
+      '  CODE 403',
+      '  HEADER "x-foo: baz"'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(2), [
-      '[+] REQUEST "bam"',
-      '[o] HEADER "x-foo: bam"',
-      '[o] DATA {"foo": "bam"}'
+      'REQUEST "bam"',
+      '  HEADER "x-foo: bam"',
+      '  DATA {"foo": "bam"}'
     ].join('\n'))
   })
 
