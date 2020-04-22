@@ -28,10 +28,14 @@ const data = '{"foo":"bar"}'
 
 describe('lib/src/retweak', () => {
   beforeEach(() => {
+    this.error = sinon.stub()
+    this.log = sinon.stub()
+    this.warn = sinon.stub()
+
     this.retweak = rewire('../../src/retweak')
-    this.retweak.__set__('util.error', () => {})
-    this.retweak.__set__('util.log', () => {})
-    this.retweak.__set__('util.warn', () => {})
+    this.retweak.__set__('util.error', this.error)
+    this.retweak.__set__('util.log', this.log)
+    this.retweak.__set__('util.warn', this.warn)
   })
 
   it('rejects if URL\'s invalid', async () => {
@@ -99,6 +103,7 @@ describe('lib/src/retweak', () => {
   it('rejects if it can\'t find * in URL', async () => {
     try {
       await this.retweak('https://foobar.com/?id=x', {
+
         headers: strHeaders,
         list: '1,2,3',
         tweak: 'URL'
@@ -159,6 +164,7 @@ describe('lib/src/retweak', () => {
 
     try {
       await this.retweak(url, {
+
         headers: headersPath,
         list: 'post, put,   pop   , delete',
         tweak: 'method'
@@ -173,6 +179,7 @@ describe('lib/src/retweak', () => {
   it('rejects if it can\'t find * in headers', async () => {
     try {
       await this.retweak(url, {
+
         headers: strHeaders,
         list: '1,2,3',
         tweak: 'header'
@@ -256,6 +263,54 @@ describe('lib/src/retweak', () => {
     })
   })
 
+  it('logs the expected alerts', async () => {
+    const request = sinon.stub()
+      .onFirstCall().resolves({
+        statusCode: 200,
+        headers: { 'x-foo': 'bar', date: 'today' },
+        data: '{"foo": "bar"}'
+      })
+      .onSecondCall().resolves({
+        statusCode: 403,
+        headers: { 'x-foo': 'baz', date: 'tomorrow' },
+        data: ''
+      })
+      .onThirdCall().resolves({
+        statusCode: 200,
+        headers: { 'x-foo': 'bam', date: 'yesterday' },
+        data: '{"foo": "bam"}'
+      })
+
+    this.retweak.__set__('request', request)
+
+    await this.retweak(url, {
+      headers: strHeaders,
+      data: dataPath,
+      list: listPath
+    })
+
+    sinon.assert.calledThrice(this.log)
+
+    sinon.assert.calledWithExactly(this.log.getCall(0), [
+      '[+] REQUEST "bar"',
+      '[o] CODE 200',
+      '[o] HEADER "x-foo: bar"',
+      '[o] DATA {"foo": "bar"}'
+    ].join('\n'))
+
+    sinon.assert.calledWithExactly(this.log.getCall(1), [
+      '[+] REQUEST "baz"',
+      '[o] CODE 403',
+      '[o] HEADER "x-foo: baz"'
+    ].join('\n'))
+
+    sinon.assert.calledWithExactly(this.log.getCall(2), [
+      '[+] REQUEST "bam"',
+      '[o] HEADER "x-foo: bam"',
+      '[o] DATA {"foo": "bam"}'
+    ].join('\n'))
+  })
+
   it('writes responses to file', async () => {
     const request = sinon.stub().resolves({
       statusCode: 200,
@@ -297,7 +352,8 @@ describe('lib/src/retweak', () => {
     })
 
     sinon.assert.calledWithExactly(stream.write.getCall(0), [
-      '200 for request#1 data "baz"\n',
+      'REQUEST "baz"',
+      'CODE 200\n',
       'x-bar: baz',
       'x-foo: bar\n',
       'idk',
@@ -305,7 +361,8 @@ describe('lib/src/retweak', () => {
     ].join('\n') + '\n')
 
     sinon.assert.calledWithExactly(stream.write.getCall(1), [
-      '200 for request#2 data "bam"\n',
+      'REQUEST "bam"',
+      'CODE 200\n',
       'x-bar: baz',
       'x-foo: bar\n',
       'idk',
@@ -314,7 +371,7 @@ describe('lib/src/retweak', () => {
   })
 
   it('is quiet and writes JSON responses to file', async () => {
-    const request = sinon.stub().resolves({ statusCode: 200 })
+    const request = sinon.stub().resolves({ statusCode: 200, headers: {} })
     const stream = { write: sinon.stub() }
     const createWriteStream = sinon.stub().returns(stream)
 
@@ -352,18 +409,19 @@ describe('lib/src/retweak', () => {
 
     sinon.assert.calledWithExactly(
       stream.write.getCall(0),
-      JSON.stringify({ statusCode: 200, index: 1 }, null, 2) + '\n'
+      JSON.stringify({ statusCode: 200, headers: {}, value: 'baz' }, null, 2) + '\n'
     )
 
     sinon.assert.calledWithExactly(
       stream.write.getCall(1),
-      JSON.stringify({ statusCode: 200, index: 2 }, null, 2) + '\n'
+      JSON.stringify({ statusCode: 200, headers: {}, value: 'bam' }, null, 2) + '\n'
     )
   })
 
   it('rejects if it can\'t find * in data', async () => {
     try {
       await this.retweak(url, {
+
         headers: headersPath,
         data,
         list: listPath
@@ -378,9 +436,9 @@ describe('lib/src/retweak', () => {
   it('errors but doesn\'t stop if request() rejects', async () => {
     const error = sinon.stub()
     const request = sinon.stub()
-      .onFirstCall().resolves({ statusCode: 200 })
+      .onFirstCall().resolves({ statusCode: 200, headers: {} })
       .onSecondCall().rejects(new Error('whoops'))
-      .onThirdCall().resolves({ statusCode: 200 })
+      .onThirdCall().resolves({ statusCode: 200, headers: {} })
 
     this.retweak.__set__('util.error', error)
     this.retweak.__set__('request', request)
