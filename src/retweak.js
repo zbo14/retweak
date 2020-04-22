@@ -101,10 +101,12 @@ module.exports = async (url, opts) => {
   }
 
   const arr = []
-  const respCodes = new Set()
-  const respHeaders = new Map()
   const json = !!opts.json
   const parallel = opts.parallel || false
+
+  const respCodes = new Set()
+  const respHeaders = new Map()
+  const respData = new Set()
 
   for (const value of list) {
     const opts = tweak(value)
@@ -113,7 +115,7 @@ module.exports = async (url, opts) => {
     const promise = request(opts).then(resp => {
       if (!respCodes.has(resp.statusCode)) {
         respCodes.add(resp.statusCode)
-        arr.push(`[-] CODE ${resp.statusCode}`)
+        arr.push(`[o] CODE ${resp.statusCode}`)
       }
 
       Object.entries(resp.headers).forEach(([name, value]) => {
@@ -124,13 +126,19 @@ module.exports = async (url, opts) => {
         if (values) {
           if (!values.includes(value)) {
             respHeaders.set(name, values.concat(value))
-            arr.push(`[-] HEADER "${name}: ${value}"`)
+            arr.push(`[o] HEADER "${name}: ${value}"`)
           }
         } else {
           respHeaders.set(name, [value])
-          arr.push(`[-] HEADER "${name}: ${value}"`)
+          arr.push(`[o] HEADER "${name}: ${value}"`)
         }
       })
+
+      if (resp.data && !respData.has(resp.data)) {
+        respData.add(resp.data)
+        const data = resp.data.slice(0, 100)
+        arr.push('[o] DATA ' + data)
+      }
 
       util.log(arr.join('\n'))
 

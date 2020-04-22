@@ -265,9 +265,21 @@ describe('lib/src/retweak', () => {
 
   it('logs the expected alerts', async () => {
     const request = sinon.stub()
-      .onFirstCall().resolves({ statusCode: 200, headers: { 'x-foo': 'bar', date: 'today' } })
-      .onSecondCall().resolves({ statusCode: 403, headers: { 'x-foo': 'baz', date: 'tomorrow' } })
-      .onThirdCall().resolves({ statusCode: 200, headers: { 'x-foo': 'bam', date: 'yesterday' } })
+      .onFirstCall().resolves({
+        statusCode: 200,
+        headers: { 'x-foo': 'bar', date: 'today' },
+        data: '{"foo": "bar"}'
+      })
+      .onSecondCall().resolves({
+        statusCode: 403,
+        headers: { 'x-foo': 'baz', date: 'tomorrow' },
+        data: ''
+      })
+      .onThirdCall().resolves({
+        statusCode: 200,
+        headers: { 'x-foo': 'bam', date: 'yesterday' },
+        data: '{"foo": "bam"}'
+      })
 
     this.retweak.__set__('request', request)
 
@@ -281,19 +293,21 @@ describe('lib/src/retweak', () => {
 
     sinon.assert.calledWithExactly(this.log.getCall(0), [
       '[+] REQUEST "bar"',
-      '[-] CODE 200',
-      '[-] HEADER "x-foo: bar"'
+      '[o] CODE 200',
+      '[o] HEADER "x-foo: bar"',
+      '[o] DATA {"foo": "bar"}'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(1), [
       '[+] REQUEST "baz"',
-      '[-] CODE 403',
-      '[-] HEADER "x-foo: baz"'
+      '[o] CODE 403',
+      '[o] HEADER "x-foo: baz"'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(2), [
       '[+] REQUEST "bam"',
-      '[-] HEADER "x-foo: bam"'
+      '[o] HEADER "x-foo: bam"',
+      '[o] DATA {"foo": "bam"}'
     ].join('\n'))
   })
 
