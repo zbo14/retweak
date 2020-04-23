@@ -96,11 +96,11 @@ module.exports = async (url, opts) => {
 
   if (!opts.quiet) {
     util.error(banner)
-    util.warn('[-] Tweaking request ' + part)
-    util.warn(`[-] Sending ${list.length} requests`)
+    util.warn('Tweaking request ' + part)
+    util.warn(`Sending ${list.length} requests`)
   }
 
-  const arr = []
+  const results = []
   const json = !!opts.json
   const parallel = opts.parallel || false
 
@@ -110,12 +110,12 @@ module.exports = async (url, opts) => {
 
   for (const value of list) {
     const opts = tweak(value)
-    const arr = [`[+] REQUEST "${value}"`]
+    const arr = [`REQUEST "${value}"`]
 
     const promise = request(opts).then(resp => {
       if (!respCodes.has(resp.statusCode)) {
         respCodes.add(resp.statusCode)
-        arr.push(`[o] CODE ${resp.statusCode}`)
+        arr.push(`  CODE ${resp.statusCode}`)
       }
 
       Object.entries(resp.headers).forEach(([name, value]) => {
@@ -126,18 +126,18 @@ module.exports = async (url, opts) => {
         if (values) {
           if (!values.includes(value)) {
             respHeaders.set(name, values.concat(value))
-            arr.push(`[o] HEADER "${name}: ${value}"`)
+            arr.push(`  HEADER "${name}: ${value}"`)
           }
         } else {
           respHeaders.set(name, [value])
-          arr.push(`[o] HEADER "${name}: ${value}"`)
+          arr.push(`  HEADER "${name}: ${value}"`)
         }
       })
 
       if (resp.data && !respData.has(resp.data)) {
         respData.add(resp.data)
         const data = resp.data.slice(0, 100)
-        arr.push('[o] DATA ' + data)
+        arr.push('  DATA ' + data)
       }
 
       util.log(arr.join('\n'))
@@ -157,8 +157,8 @@ module.exports = async (url, opts) => {
       }
     }).catch(err => opts.quiet || util.error('[!] ERROR: ' + err.message))
 
-    arr.push(parallel ? promise : await promise)
+    results.push(parallel ? promise : await promise)
   }
 
-  opts.parallel && await Promise.all(arr)
+  opts.parallel && await Promise.all(results)
 }

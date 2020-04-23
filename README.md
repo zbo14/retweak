@@ -4,6 +4,16 @@ A CLI that tweaks and resends HTTP/S requests!
 
 `retweak` can modify request URLs, methods, headers, or data and report changes in responses.
 
+## But why?
+
+A common process in pentesting/bug bounties is web path enumeration. There are many tools to do this (e.g. [dirb](http://dirb.sourceforge.net/), [gobuster](https://github.com/OJ/gobuster)). **Note:** `retweak` can do this but I wouldn't recommend it solely for this purpose since the aforementioned tools are better/faster.
+
+`retweak` comes in handy when you want to change *another* part of the request (e.g. URL query parameter, request body JSON) to see if/how the response changes. Rather than manually editing and resending the request in Firefox developer tools or replaying the request with a proxy, you can programmatically tweak and resend requests with `retweak`.
+
+The way it works is you define a "base request" (URL, method, headers, data), tell `retweak` what part of the request to "tweak", and pass a list of values. Then `retweak` fires off a bunch of requests. Each request is derived from the "base request" and includes one of the values in the list. Each value is injected into the request at a location you specify.
+
+I haven't used [Burp Suite](https://portswigger.net/burp) but my understanding is [Burp Repeater](https://portswigger.net/burp/documentation/desktop/tools/repeater) has a likeminded goal of modifying and resending HTTP/S requests (and it has a UI :)). My motivation for writing `retweak` was to create a CLI you could easily pull off the shelf to automate this process. If there are other tools you think I should know about or mention here, please [bring them up](#Contributing)!
+
 ## Install
 
 `$ npm i retweak`
@@ -13,23 +23,29 @@ A CLI that tweaks and resends HTTP/S requests!
 `$ retweak -h`
 
 ```
-Usage: retweak [options] <url>
+Usage: retweak [options] [command] <url>
 
 Options:
   -V, --version                  output the version number
   -d, --data <data/@file>        request data to send
   -H, --headers <headers/@file>  request headers to send
-  -l, --list <values/@file>      list of values to try
   -j, --json                     write JSON responses to file (only if -o)
+  -k, --insecure                 allow insecure TLS connection
+  -l, --list <values/@file>      list of values to try
   -o, --output <file>            write all responses to file
   -p, --parallel                 send requests in parallel
   -q, --quiet                    don't show banner and debugging info
   -t, --tweak <part>             part of the request to tweak ["url","method","header","data"]
   -X, --method <method>          request method
   -h, --help                     output usage information
+
+Commands:
+  methods <url>                  test all HTTP methods
 ```
 
-`retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak. It then substitutes it with the values in `-l, --list` and sends a request for each substitution. When `retweak` receives a new status code, it will report the status code and the corresponding request. If you'd like to observe *all* responses (including headers and data), you can write them to a file with the `-o, --output` option. The responses are plaintext by default, but you can specify `-j, --json` if you'd like the responses in JSON format.
+`retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak (unless you're tweaking the request method). Then it injects each value in `-l, --list` at that location and sends a request for each "injection".
+
+If you'd like to review *all* responses in their entirety, you can write them to a file with the `-o, --output` option. The responses are plaintext by default, but you can specify `-j, --json` if you'd like the responses in JSON format.
 
 The CLI adopts some options from [curl](https://curl.haxx.se/) that take a literal value *or* filename as an argument. If you'd like to pass a filename, make sure to prepend it with "@" so the CLI knows you meant to pass a filename! **Note:** for output the argument can *only* be a filename so there's no need to prepend with a "@".
 
@@ -51,6 +67,12 @@ The following sends 3 requests with different HTTP methods.
 
 ```
 $ retweak -l "POST,PUT,PATCH" -t method <url>
+```
+
+`retweak` has a subcommand for testing *all* HTTP methods.
+
+```
+$ retweak methods <url>
 ```
 
 ### Header
