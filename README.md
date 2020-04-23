@@ -2,15 +2,17 @@
 
 A CLI that tweaks and resends HTTP/S requests!
 
-`retweak` can modify request URLs, methods, headers, or data and then report changes in responses.
+`retweak` can modify request URLs, methods, headers, or data and report changes in responses.
 
-## Why?
+## But why?
 
-A common process in pentesting/bug bounties is enumerating web paths. There are many tools to do this (e.g. [dirb](http://dirb.sourceforge.net/), [gobuster](https://github.com/OJ/gobuster)). **Note:** `retweak` can do this but I wouldn't recommend it solely for this purpose since the aforementioned tools are faster/better.
+A common process in pentesting/bug bounties is web path enumeration. There are many tools to do this (e.g. [dirb](http://dirb.sourceforge.net/), [gobuster](https://github.com/OJ/gobuster)). **Note:** `retweak` can do this but I wouldn't recommend it solely for this purpose since the aforementioned tools are better/faster.
 
-`retweak` comes in handy when you want to change *other* parts of the request. For instance, modifying a URL query parameter or ommitting a JSON field in the request body to see if/how the HTTP/S response changes. Rather than manually editing-and-resending the request in Firefox developer tools or replaying the request with a proxy, you can programmatically tweak and resend requests with `retweak`. You specify a "base request" (method, headers, data, etc), tell `retweak` what part of the request you want to "tweak", and pass a list of values you'd like to test. Then `retweak` fires off a bunch of requests derived from the "base request" with substitions for the values in the list.
+`retweak` comes in handy when you want to change *another* part of the request (e.g. URL query parameter, request body JSON) to see if/how the response changes. Rather than manually editing and resending the request in Firefox developer tools or replaying the request with a proxy, you can programmatically tweak and resend requests with `retweak`.
 
-I haven't used [Burp Suite](https://portswigger.net/burp) but my understanding is [Burp Repeater](https://portswigger.net/burp/documentation/desktop/tools/repeater) has overlapping functionality (and a UI!). My motivation for writing `retweak` was to create a CLI with request tweaking and resending functionality.
+The way it works is you define a "base request" (URL, method, headers, data), tell `retweak` what part of the request to "tweak", and pass a list of values. Then `retweak` fires off a bunch of requests. Each request is derived from the "base request" and includes one of the values in the list. Each value is injected into the request at a location you specify.
+
+I haven't used [Burp Suite](https://portswigger.net/burp) but my understanding is [Burp Repeater](https://portswigger.net/burp/documentation/desktop/tools/repeater) has a likeminded goal of modifying and resending HTTP/S requests (and it has a UI :)). My motivation for writing `retweak` was to create a CLI you could easily pull off the shelf to automate this process. If there are other tools you think I should know about or mention here, please [bring them up](#Contributing)!
 
 ## Install
 
@@ -41,7 +43,9 @@ Commands:
   methods <url>                  test all HTTP methods
 ```
 
-`retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak. It then substitutes it with the values in `-l, --list` and sends a request for each substitution. If you'd like to review *all* responses in their entirety, you can write them to a file with the `-o, --output` option. The responses are plaintext by default, but you can specify `-j, --json` if you'd like the responses in JSON format.
+`retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak (unless you're tweaking the request method). Then it injects each value in `-l, --list` at that location and sends a request for each "injection".
+
+If you'd like to review *all* responses in their entirety, you can write them to a file with the `-o, --output` option. The responses are plaintext by default, but you can specify `-j, --json` if you'd like the responses in JSON format.
 
 The CLI adopts some options from [curl](https://curl.haxx.se/) that take a literal value *or* filename as an argument. If you'd like to pass a filename, make sure to prepend it with "@" so the CLI knows you meant to pass a filename! **Note:** for output the argument can *only* be a filename so there's no need to prepend with a "@".
 
