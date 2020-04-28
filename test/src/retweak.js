@@ -103,7 +103,6 @@ describe('lib/src/retweak', () => {
   it('rejects if it can\'t find * in URL', async () => {
     try {
       await this.retweak('https://foobar.com/?id=x', {
-
         headers: strHeaders,
         list: '1,2,3',
         tweak: 'URL'
@@ -112,6 +111,36 @@ describe('lib/src/retweak', () => {
       assert.fail('Should reject')
     } catch ({ message }) {
       assert.strictEqual(message, 'Please specify * where you would like to tweak the URL')
+    }
+  })
+
+  it('rejects if maxData is invalid', async () => {
+    try {
+      await this.retweak(url, {
+        headers: strHeaders,
+        list: 'post, put,patch, delete',
+        tweak: 'method',
+        maxData: '1MB'
+      })
+
+      assert.fail('Should reject')
+    } catch ({ message }) {
+      assert.strictEqual(message, 'Expected --max-data to be a positive integer followed by B/KB')
+    }
+  })
+
+  it('rejects if maxData is too small', async () => {
+    try {
+      await this.retweak(url, {
+        headers: strHeaders,
+        list: 'post, put,patch, delete',
+        tweak: 'method',
+        maxData: '0.0009KB'
+      })
+
+      assert.fail('Should reject')
+    } catch ({ message }) {
+      assert.strictEqual(message, 'Please specify --max-data that is >= 1B')
     }
   })
 
@@ -164,7 +193,6 @@ describe('lib/src/retweak', () => {
 
     try {
       await this.retweak(url, {
-
         headers: headersPath,
         list: 'post, put,   pop   , delete',
         tweak: 'method'
@@ -179,7 +207,6 @@ describe('lib/src/retweak', () => {
   it('rejects if it can\'t find * in headers', async () => {
     try {
       await this.retweak(url, {
-
         headers: strHeaders,
         list: '1,2,3',
         tweak: 'header'
@@ -200,7 +227,8 @@ describe('lib/src/retweak', () => {
       method: 'GET',
       headers: headersPath,
       data: '...',
-      list: '22,222,2222'
+      list: '22,222,2222',
+      maxData: '2B'
     })
 
     sinon.assert.calledThrice(request)
@@ -263,22 +291,22 @@ describe('lib/src/retweak', () => {
     })
   })
 
-  it('logs the expected alerts', async () => {
+  it('passes custom ignoreHeaders + maxData and logs alerts', async () => {
     const request = sinon.stub()
       .onFirstCall().resolves({
         statusCode: 200,
-        headers: { 'x-foo': 'bar', date: 'today' },
-        data: '{"foo": "bar"}'
+        headers: { 'x-foo': 'bar', day: 'today' },
+        data: 'fooooooooooooo'.repeat(100)
       })
       .onSecondCall().resolves({
         statusCode: 403,
-        headers: { 'x-foo': 'baz', date: 'tomorrow' },
+        headers: { 'x-foo': 'baz', day: 'tomorrow' },
         data: ''
       })
       .onThirdCall().resolves({
         statusCode: 200,
-        headers: { 'x-foo': 'bam', date: 'yesterday' },
-        data: '{"foo": "bam"}'
+        headers: { 'x-foo': 'bam', day: 'yesterday' },
+        data: '{"foo": "bambam"}'.repeat(100)
       })
 
     this.retweak.__set__('request', request)
@@ -286,28 +314,29 @@ describe('lib/src/retweak', () => {
     await this.retweak(url, {
       headers: strHeaders,
       data: dataPath,
-      list: listPath
+      list: listPath,
+      ignoreHeaders: '1 ,2    ,3,4, day  ,5 ',
+      maxData: '1.5KB'
     })
 
     sinon.assert.calledThrice(this.log)
 
     sinon.assert.calledWithExactly(this.log.getCall(0), [
-      'REQUEST "bar"',
-      '  CODE 200',
-      '  HEADER "x-foo: bar"',
-      '  DATA {"foo": "bar"}'
+      '[REQUEST] "bar"',
+      '  CODE   - 200',
+      '  HEADER > "x-foo: bar"',
+      '  DATA   ~ ' + 'fooooooooooooo'.repeat(100).slice(0, 80) + ' (SIZE:1.4KB)'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(1), [
-      'REQUEST "baz"',
-      '  CODE 403',
-      '  HEADER "x-foo: baz"'
+      '[REQUEST] "baz"',
+      '  CODE   - 403',
+      '  HEADER > "x-foo: baz"'
     ].join('\n'))
 
     sinon.assert.calledWithExactly(this.log.getCall(2), [
-      'REQUEST "bam"',
-      '  HEADER "x-foo: bam"',
-      '  DATA {"foo": "bam"}'
+      '[REQUEST] "bam"',
+      '  HEADER > "x-foo: bam"'
     ].join('\n'))
   })
 
@@ -352,8 +381,8 @@ describe('lib/src/retweak', () => {
     })
 
     sinon.assert.calledWithExactly(stream.write.getCall(0), [
-      'REQUEST "baz"',
-      'CODE 200\n',
+      '[REQUEST] "baz"',
+      'CODE - 200\n',
       'x-bar: baz',
       'x-foo: bar\n',
       'idk',
@@ -361,8 +390,8 @@ describe('lib/src/retweak', () => {
     ].join('\n') + '\n')
 
     sinon.assert.calledWithExactly(stream.write.getCall(1), [
-      'REQUEST "bam"',
-      'CODE 200\n',
+      '[REQUEST] "bam"',
+      'CODE - 200\n',
       'x-bar: baz',
       'x-foo: bar\n',
       'idk',

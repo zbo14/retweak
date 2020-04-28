@@ -6,7 +6,7 @@ A CLI that tweaks and resends HTTP/S requests!
 
 ## But why?
 
-A common process in pentesting/bug bounties is web path enumeration. There are many tools to do this (e.g. [dirb](http://dirb.sourceforge.net/), [gobuster](https://github.com/OJ/gobuster)). **Note:** `retweak` can do this but I wouldn't recommend it solely for this purpose since the aforementioned tools are better/faster.
+A common process in pentesting/bug bounties is web path enumeration. There are many tools to do this (e.g. [dirb](http://dirb.sourceforge.net/), [dirsearch](https://github.com/maurosoria/dirsearch), [gobuster](https://github.com/OJ/gobuster)). **Note:** `retweak` can do this but I wouldn't recommend it solely for this purpose since the aforementioned tools are better/faster.
 
 `retweak` comes in handy when you want to change *another* part of the request (e.g. URL query parameter, request body JSON) to see if/how the response changes. Rather than manually editing and resending the request in Firefox developer tools or replaying the request with a proxy, you can programmatically tweak and resend requests with `retweak`.
 
@@ -26,21 +26,24 @@ I haven't used [Burp Suite](https://portswigger.net/burp) but my understanding i
 Usage: retweak [options] [command] <url>
 
 Options:
-  -V, --version                  output the version number
-  -d, --data <data/@file>        request data to send
-  -H, --headers <headers/@file>  request headers to send
-  -j, --json                     write JSON responses to file (only if -o)
-  -k, --insecure                 allow insecure TLS connection
-  -l, --list <values/@file>      list of values to try
-  -o, --output <file>            write all responses to file
-  -p, --parallel                 send requests in parallel
-  -q, --quiet                    don't show banner and debugging info
-  -t, --tweak <part>             part of the request to tweak ["url","method","header","data"]
-  -X, --method <method>          request method
-  -h, --help                     output usage information
+  -V, --version                       output the version number
+  -d, --data <data/@file>             request data to send
+  -H, --headers <headers/@file>       request headers to send
+  -i, --ignore-headers <names/@file>  don't report changes in these headers
+  -j, --json                          write JSON responses to file (only if -o)
+  -k, --insecure                      allow insecure TLS connection
+  -l, --list <values/@file>           list of values to try
+  -m, --max-data <size>B/KB           don't report data when it's over this size
+  -o, --output <file>                 write all responses to file
+  -p, --parallel                      send requests in parallel
+  -q, --quiet                         don't show banner and debugging info
+  -t, --tweak <part>                  part of the request to tweak ["url","method","header","data"]
+  -X, --method <method>               request method
+  -h, --help                          output usage information
 
 Commands:
-  methods <url>                  test all HTTP methods
+  hosts <url>                         test a bunch of values for the Host header
+  methods <url>                       test all HTTP methods
 ```
 
 `retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak (unless you're tweaking the request method). Then it injects each value in `-l, --list` at that location and sends a request for each "injection".
@@ -82,6 +85,14 @@ The following sends 3 requests with different Host headers.
 ```
 $ retweak -H "Host: *" -l "foo.com,bar.foo.com,baz.foo.com" <url>
 ```
+
+`retweak` has a subcommand for injecting a bunch of values in the Host header.
+
+```
+$ retweak hosts <url>
+```
+
+**Note:** you can use `-l, --list` if you have a list of hosts, otherwise `retweak` will use its own.
 
 ### Cookie
 
