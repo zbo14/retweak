@@ -3,12 +3,9 @@
 const fs = require('fs')
 const http = require('http')
 const banner = require('./banner')
+const env = require('./env')
 const request = require('./request')
 const util = require('./util')
-
-const SKIP_HEADERS = new Set([
-  'date'
-])
 
 module.exports = async (url, opts) => {
   url = new URL(url)
@@ -33,10 +30,13 @@ module.exports = async (url, opts) => {
     }
   }
 
-  let [strHeaders, data, list] = await Promise.all([
+  opts.ignoreHeaders = (opts.ignoreHeaders || '').trim() || env.IGNORE_HEADERS
+
+  let [strHeaders, data, list, ignoreHeaders] = await Promise.all([
     util.read(opts.headers),
     util.read(opts.data),
-    util.read(opts.list)
+    util.read(opts.list),
+    util.read(opts.ignoreHeaders)
   ])
 
   const headers = strHeaders && util.string2headers(strHeaders, util.splitOn(opts.headers))
@@ -44,7 +44,7 @@ module.exports = async (url, opts) => {
   list = list && util.split(list, util.splitOn(opts.list))
 
   method = method || (data ? 'POST' : 'GET')
-  tweak = tweak || (data && ['POST', 'PUT', 'PATCH'].includes(method) ? 'data' : 'header')
+  tweak = tweak || (data && ['POST', 'PUT', 'PATCH'].includes(method) ? 'data' : 'url')
   const part = tweak
 
   if (tweak === 'url') {
@@ -67,6 +67,10 @@ module.exports = async (url, opts) => {
 
     tweak = value => ({ url, method: value, headers, data })
   } else if (tweak === 'header') {
+    if (!strHeaders) {
+      throw new Error('No headers provided')
+    }
+
     const idx = strHeaders.indexOf('*')
 
     if (idx === -1) {
@@ -82,6 +86,10 @@ module.exports = async (url, opts) => {
       data
     })
   } else {
+    if (!data) {
+      throw new Error('No data provided')
+    }
+
     const idx = data.indexOf('*')
 
     if (idx === -1) {
@@ -92,7 +100,28 @@ module.exports = async (url, opts) => {
     tweak = value => ({ url, method, headers, data: replace(value) })
   }
 
-  const stream = opts.output && fs.createWriteStream(opts.output)
+  ignoreHeaders = new Set(util.split(ignoreHeaders, util.splitOn(opts.ignoreHeaders)))
+
+  let maxData = (opts.maxData || '').replace(/\s/g, '').toUpperCase()
+
+  if (opts.maxData) {
+    let [, num, units] = opts.maxData.match(/([0-9]+(?:\.[0-9]+)?)(K?B)/) || []
+    num = +num
+
+    if (!num) {
+      throw new Error('Expected --max-data to be a positive number followed by B/KB')
+    }
+
+    maxData = num * (units === 'KB' ? 1e3 : 1)
+  } else {
+    maxData = env.MAX_DATA
+  }
+
+  maxData = Math.floor(maxData)
+
+  if (maxData < 1) {
+    throw new Error('Please specify --max-data that is >= 1B')
+  }
 
   if (!opts.quiet) {
     util.error(banner)
@@ -100,54 +129,57 @@ module.exports = async (url, opts) => {
     util.warn(`Sending ${list.length} requests`)
   }
 
-  const results = []
   const json = !!opts.json
   const parallel = opts.parallel || false
+  const results = []
 
   const respCodes = new Set()
   const respHeaders = new Map()
   const respData = new Set()
 
+  const stream = opts.output && fs.createWriteStream(opts.output)
+
   for (const value of list) {
     const opts = tweak(value)
-    const arr = [`REQUEST "${value}"`]
+    const arr = [`[REQUEST] "${value}"`]
 
     const promise = request(opts).then(resp => {
       if (!respCodes.has(resp.statusCode)) {
         respCodes.add(resp.statusCode)
-        arr.push(`  CODE ${resp.statusCode}`)
+        arr.push(`  CODE   - ${resp.statusCode}`)
       }
 
       Object.entries(resp.headers).forEach(([name, value]) => {
-        if (SKIP_HEADERS.has(name)) return
+        if (ignoreHeaders.has(name)) return
 
         const values = respHeaders.get(name)
 
         if (values) {
           if (!values.includes(value)) {
             respHeaders.set(name, values.concat(value))
-            arr.push(`  HEADER "${name}: ${value}"`)
+            arr.push(`  HEADER > "${name}: ${value}"`)
           }
         } else {
           respHeaders.set(name, [value])
-          arr.push(`  HEADER "${name}: ${value}"`)
+          arr.push(`  HEADER > "${name}: ${value}"`)
         }
       })
 
-      if (resp.data && !respData.has(resp.data)) {
+      if (resp.data && resp.data.length < maxData && !respData.has(resp.data)) {
         respData.add(resp.data)
-        const data = resp.data.slice(0, 100)
-        arr.push('  DATA ' + data)
+        const size = resp.data.length > 1e3 ? Math.round(resp.data.length / 100) / 10 + 'KB' : resp.data.length + 'B'
+        const data = resp.data.slice(0, 80).replace(/\r?\n/g, '') + ` (SIZE:${size})`
+        arr.push('  DATA   ~ ' + data)
       }
 
-      util.log(arr.join('\n'))
+      arr.length > 1 && util.log(arr.join('\n'))
 
       if (stream) {
         const result = json
           ? JSON.stringify({ ...resp, value }, null, 2)
           : [
-            `REQUEST "${value}"`,
-            'CODE ' + resp.statusCode + '\n',
+            `[REQUEST] "${value}"`,
+            'CODE - ' + resp.statusCode + '\n',
             util.headers2string(resp.headers) + '\n',
             resp.data,
             util.divider

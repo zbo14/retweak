@@ -1,10 +1,6 @@
 'use strict'
 
-const fs = require('fs')
-const { promisify } = require('util')
-
-const readFile = promisify(fs.readFile)
-const writeFile = promisify(fs.writeFile)
+const { readFile, writeFile } = require('fs').promises
 
 const divider = '='.repeat(60)
 
