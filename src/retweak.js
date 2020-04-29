@@ -44,7 +44,7 @@ module.exports = async (url, opts) => {
   list = list && util.split(list, util.splitOn(opts.list))
 
   method = method || (data ? 'POST' : 'GET')
-  tweak = tweak || (data && ['POST', 'PUT', 'PATCH'].includes(method) ? 'data' : 'header')
+  tweak = tweak || (data && ['POST', 'PUT', 'PATCH'].includes(method) ? 'data' : 'url')
   const part = tweak
 
   if (tweak === 'url') {
@@ -67,6 +67,10 @@ module.exports = async (url, opts) => {
 
     tweak = value => ({ url, method: value, headers, data })
   } else if (tweak === 'header') {
+    if (!strHeaders) {
+      throw new Error('No headers provided')
+    }
+
     const idx = strHeaders.indexOf('*')
 
     if (idx === -1) {
@@ -82,6 +86,10 @@ module.exports = async (url, opts) => {
       data
     })
   } else {
+    if (!data) {
+      throw new Error('No data provided')
+    }
+
     const idx = data.indexOf('*')
 
     if (idx === -1) {
@@ -101,7 +109,7 @@ module.exports = async (url, opts) => {
     num = +num
 
     if (!num) {
-      throw new Error('Expected --max-data to be a positive integer followed by B/KB')
+      throw new Error('Expected --max-data to be a positive number followed by B/KB')
     }
 
     maxData = num * (units === 'KB' ? 1e3 : 1)

@@ -52,7 +52,7 @@ If you'd like to review *all* responses in their entirety, you can write them to
 
 The CLI adopts some options from [curl](https://curl.haxx.se/) that take a literal value *or* filename as an argument. If you'd like to pass a filename, make sure to prepend it with "@" so the CLI knows you meant to pass a filename! **Note:** for output the argument can *only* be a filename so there's no need to prepend with a "@".
 
-`retweak` tries to assume sensible defaults when options aren't specified. If you provide `-d, --data` but don't specify `-m, --method`, the latter defaults to POST. Otherwise, method defaults to GET. If the method's POST, PUT, or PATCH, `-t, --tweak` defaults to "data". Otherwise, it defaults to "header".
+`retweak` tries to assume sensible defaults when options aren't specified. If you provide `-d, --data` but don't specify `-m, --method`, the latter defaults to POST. Otherwise, method defaults to GET. If the method's POST, PUT, or PATCH, `-t, --tweak` defaults to "data", otherwise it defaults to "url".
 
 ## Examples
 

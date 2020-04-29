@@ -125,7 +125,7 @@ describe('lib/src/retweak', () => {
 
       assert.fail('Should reject')
     } catch ({ message }) {
-      assert.strictEqual(message, 'Expected --max-data to be a positive integer followed by B/KB')
+      assert.strictEqual(message, 'Expected --max-data to be a positive number followed by B/KB')
     }
   })
 
@@ -141,6 +141,26 @@ describe('lib/src/retweak', () => {
       assert.fail('Should reject')
     } catch ({ message }) {
       assert.strictEqual(message, 'Please specify --max-data that is >= 1B')
+    }
+  })
+
+  it('rejects when there are no headers to tweak', async () => {
+    try {
+      await this.retweak(url, { tweak: 'header' })
+
+      assert.fail('Should reject')
+    } catch ({ message }) {
+      assert.strictEqual(message, 'No headers provided')
+    }
+  })
+
+  it('rejects when there\'s no data to tweak', async () => {
+    try {
+      await this.retweak(url, { tweak: 'data' })
+
+      assert.fail('Should reject')
+    } catch ({ message }) {
+      assert.strictEqual(message, 'No data provided')
     }
   })
 
@@ -218,6 +238,37 @@ describe('lib/src/retweak', () => {
     }
   })
 
+  it('tweaks URL query parameter and mocks requests', async () => {
+    const request = sinon.stub().resolves({ statusCode: 200 })
+
+    this.retweak.__set__('request', request)
+
+    await this.retweak('https://foobar.com?id=*', { list: '1,2,3' })
+
+    sinon.assert.calledThrice(request)
+
+    sinon.assert.calledWithExactly(request.getCall(0), {
+      url: new URL('https://foobar.com?id=1'),
+      method: 'GET',
+      headers: undefined,
+      data: undefined
+    })
+
+    sinon.assert.calledWithExactly(request.getCall(1), {
+      url: new URL('https://foobar.com?id=2'),
+      method: 'GET',
+      headers: undefined,
+      data: undefined
+    })
+
+    sinon.assert.calledWithExactly(request.getCall(2), {
+      url: new URL('https://foobar.com?id=3'),
+      method: 'GET',
+      headers: undefined,
+      data: undefined
+    })
+  })
+
   it('tweaks cookie and mocks requests', async () => {
     const request = sinon.stub().resolves({ statusCode: 200 })
 
@@ -228,6 +279,7 @@ describe('lib/src/retweak', () => {
       headers: headersPath,
       data: '...',
       list: '22,222,2222',
+      tweak: 'header',
       maxData: '2B'
     })
 
