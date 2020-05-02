@@ -12,7 +12,7 @@ const methods = '@' + path.join(wordlists, 'methods.txt')
 const program = new commander.Command()
 
 program
-  .version('1.3.0')
+  .version('1.4.0')
   .option('-d, --data <data/@file>', 'request data to send')
   .option('-H, --headers <headers/@file>', 'request headers to send')
   .option('-i, --ignore-headers <names/@file>', 'don\'t report changes in these headers')
