@@ -153,16 +153,23 @@ module.exports = async (url, opts) => {
         if (ignoreHeaders.has(name)) return
 
         const values = respHeaders.get(name)
+        let varr = [].concat(value)
 
-        if (values) {
-          if (!values.includes(value)) {
-            respHeaders.set(name, values.concat(value))
-            arr.push(`  HEADER > "${name}: ${value}"`)
-          }
-        } else {
-          respHeaders.set(name, [value])
-          arr.push(`  HEADER > "${name}: ${value}"`)
+        if (name === 'set-cookie') {
+          varr = varr.map(line => line.split(';')[0])
         }
+
+        varr.forEach(value => {
+          if (values) {
+            if (!values.includes(value)) {
+              respHeaders.set(name, values.concat(value))
+              arr.push(`  HEADER > "${name}: ${value.slice(0, 80)}"`)
+            }
+          } else {
+            respHeaders.set(name, [value])
+            arr.push(`  HEADER > "${name}: ${value.slice(0, 80)}"`)
+          }
+        })
       })
 
       if (resp.data && resp.data.length < maxData && !respData.has(resp.data)) {
