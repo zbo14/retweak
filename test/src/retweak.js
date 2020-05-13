@@ -347,17 +347,24 @@ describe('lib/src/retweak', () => {
     const request = sinon.stub()
       .onFirstCall().resolves({
         statusCode: 200,
-        headers: { 'x-foo': 'bar', day: 'today' },
+        headers: { 'x-foo': 'bar', day: 'today', 'set-cookie': 'cookie=snickerdoodle;expires=...' },
         data: 'fooooooooooooo'.repeat(100)
       })
       .onSecondCall().resolves({
         statusCode: 403,
-        headers: { 'x-foo': 'baz', day: 'tomorrow' },
-        data: ''
+        headers: { 'x-foo': 'baz', day: 'tomorrow', 'set-cookie': ['cookie=snickerdoodle;expires=idk'] },
+        data: '',
       })
       .onThirdCall().resolves({
         statusCode: 200,
-        headers: { 'x-foo': 'bam', day: 'yesterday' },
+        headers: {
+          'x-foo': 'bam',
+          day: 'yesterday',
+          'set-cookie': [
+            'cookie=chocochip;expires=eventually',
+            'cookie=oatmealraisin;expires=never'
+          ]
+        },
         data: '{"foo": "bambam"}'.repeat(100)
       })
 
@@ -376,6 +383,7 @@ describe('lib/src/retweak', () => {
     sinon.assert.calledWithExactly(this.log.getCall(0), [
       '[REQUEST] "bar"',
       '  CODE   - 200',
+      '  HEADER > "set-cookie: cookie=snickerdoodle"',
       '  HEADER > "x-foo: bar"',
       '  DATA   ~ ' + 'fooooooooooooo'.repeat(100).slice(0, 80) + ' (SIZE:1.4KB)'
     ].join('\n'))
@@ -388,6 +396,8 @@ describe('lib/src/retweak', () => {
 
     sinon.assert.calledWithExactly(this.log.getCall(2), [
       '[REQUEST] "bam"',
+      '  HEADER > "set-cookie: cookie=chocochip"',
+      '  HEADER > "set-cookie: cookie=oatmealraisin"',
       '  HEADER > "x-foo: bam"'
     ].join('\n'))
   })

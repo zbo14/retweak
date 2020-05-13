@@ -149,28 +149,30 @@ module.exports = async (url, opts) => {
         arr.push(`  CODE   - ${resp.statusCode}`)
       }
 
-      Object.entries(resp.headers).forEach(([name, value]) => {
-        if (ignoreHeaders.has(name)) return
+      Object.entries(resp.headers)
+        .sort(([a], [b]) => a > b ? 1 : -1)
+        .forEach(([name, value]) => {
+          if (ignoreHeaders.has(name)) return
 
-        const values = respHeaders.get(name)
-        let varr = [].concat(value)
+          const values = respHeaders.get(name)
+          let varr = [].concat(value)
 
-        if (name === 'set-cookie') {
-          varr = varr.map(line => line.split(';')[0])
-        }
+          if (name === 'set-cookie') {
+            varr = varr.map(line => line.split(';')[0])
+          }
 
-        varr.forEach(value => {
-          if (values) {
-            if (!values.includes(value)) {
-              respHeaders.set(name, values.concat(value))
+          varr.forEach(value => {
+            if (values) {
+              if (!values.includes(value)) {
+                respHeaders.set(name, values.concat(value))
+                arr.push(`  HEADER > "${name}: ${value.slice(0, 80)}"`)
+              }
+            } else {
+              respHeaders.set(name, [value])
               arr.push(`  HEADER > "${name}: ${value.slice(0, 80)}"`)
             }
-          } else {
-            respHeaders.set(name, [value])
-            arr.push(`  HEADER > "${name}: ${value.slice(0, 80)}"`)
-          }
+          })
         })
-      })
 
       if (resp.data && resp.data.length < maxData && !respData.has(resp.data)) {
         respData.add(resp.data)

@@ -45,8 +45,25 @@ program
   .action((url, opts) => retweak(url, { ...opts.parent, list: methods, tweak: 'method' }))
 
 program
-  .command('urls <url>')
-  .description('test URL encodings')
+  .command('origins <url>')
+  .description('test a bunch of values for the Origin header')
+  .action(async (url, opts) => {
+    const data = await util.read(opts.headers) || ''
+    let headers = util.string2headers(data, util.splitOn(opts.headers))
+    headers.origin = '*'
+    headers = util.headers2string(headers, ',')
+
+    const list = [
+      url,
+      null
+    ].join(',')
+
+    return retweak(url, { list, ...opts.parent, headers, tweak: 'header' })
+  })
+
+program
+  .command('urlencodings <url>')
+  .description('test different URL encodings')
   .action((url, opts) => retweak(url, { ...opts.parent, list: urlEncoded, tweak: 'url' }))
 
 program
