@@ -12,7 +12,7 @@ A common process in pentesting/bug bounties is web path enumeration. There are m
 
 The way it works is you define a "base request" (URL, method, headers, data), tell `retweak` what part of the request to "tweak", and pass a list of values. Then `retweak` fires off a bunch of requests. Each request is derived from the "base request" and includes one of the values in the list. Each value is injected into the request at a location you specify.
 
-I haven't used [Burp Suite](https://portswigger.net/burp) but my understanding is [Burp Repeater](https://portswigger.net/burp/documentation/desktop/tools/repeater) has a likeminded goal of modifying and resending HTTP/S requests (and it has a UI :)). My motivation for writing `retweak` was to create a CLI you could easily pull off the shelf to automate this process. If there are other tools you think I should know about or mention here, please [bring them up](#Contributing)!
+[Burp Repeater](https://portswigger.net/burp/documentation/desktop/tools/repeater) has a likeminded goal of modifying and resending HTTP/S requests (and it has a UI :)). My motivation for writing `retweak` was to create a CLI you could easily pull off the shelf to automate this process. It's especially useful if you have tens (or hundreds) of predefined modifications you'd like to test against an endpoint. If there are other tools you think I should know about or mention here, please [bring them up](#Contributing)!
 
 ## Install
 
@@ -44,6 +44,8 @@ Options:
 Commands:
   hosts <url>                         test a bunch of values for the Host header
   methods <url>                       test all HTTP methods
+  origins <url>                       test a bunch of values for the Origin header
+  urlencodings <url>                  test different URL encodings
 ```
 
 `retweak` searches for an asterisk ("\*") in the part of the request you'd like to tweak (unless you're tweaking the request method). Then it injects each value in `-l, --list` at that location and sends a request for each "injection".
@@ -62,6 +64,12 @@ The following sends 3 requests with different values for the query parameter, "i
 
 ```
 $ retweak -l "1,2,3" -t url "https://<domain>/a/b/c?id=*"
+```
+
+`retweak` has a subcommand for testing different URL encodings.
+
+```
+$ retweak urlencodings "https://<domain>/a/b/c?id=*"
 ```
 
 ### HTTP method
