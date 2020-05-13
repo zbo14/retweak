@@ -55,7 +55,7 @@ program
 
     const list = [
       url,
-      null
+      'null'
     ].join(',')
 
     return retweak(url, { list, ...opts.parent, headers, tweak: 'header' })
